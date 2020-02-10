@@ -50,7 +50,7 @@ if __name__ == '__main__':
     require_minimum_pandas_version()
     require_minimum_pyarrow_version()
 
-    spark = create_spark_session('windexplorer:get_site_info')
+    spark = create_spark_session('windexplorer:get_site_data')
 
     # Enable Arrow-based columnar data transfers
     spark.conf.set("spark.sql.execution.arrow.enabled", "true")
