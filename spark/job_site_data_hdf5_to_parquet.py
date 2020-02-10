@@ -42,7 +42,7 @@ def write_parquet_to_s3(pq):
 
 def download_site(site_id):
     print("DOWNLOADING SITE ===> %s" % site_id)
-    site_pd = get_pandas(int(site_id))
+    site_pd = get_pandas(site_id)
     site_pq = get_parquet(site_pd)
     write_parquet_to_s3(site_pq)
 
@@ -59,8 +59,7 @@ if __name__ == '__main__':
     sites = pywtk.site_lookup.sites
 
     # All site-ids
-    site_list = [str(sites['gid'].values[i]-1) for i in range(0,len(sites))]
-    print site_list
+    site_list = [sites['gid'].values[i]-1 for i in range(0,len(sites))]
 
     # Parallelize
     dist_site_list = spark.sparkContext.parallelize(site_list, len(site_list))
