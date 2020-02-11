@@ -3,16 +3,21 @@
 #sc._jsc.hadoopConfiguration().set("fs.s3a.region", os.environ["us-west-2"])
 
 import os
+import errno
+import time
 import shutil
 import pandas
-import pywtk
 import pywtk.wtk_api as pwtk
+import pywtk
 import numpy as np
 from pyspark.sql import SparkSession
 from pyspark.sql import DataFrameWriter
 from pyspark.sql.utils import require_minimum_pandas_version, require_minimum_pyarrow_version
 from spark_utils import create_spark_session, write_to_postgres
 from wtk_utils import get_wtk_output_uri
+
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 # Set attributes you want
 attributes = ['density', 'power', 'pressure', 'temperature', 'wind_direction', 'wind_speed']
@@ -21,30 +26,61 @@ attributes = ['density', 'power', 'pressure', 'temperature', 'wind_direction', '
 start = pandas.Timestamp('2007-01-01', tz='utc')
 end = pandas.Timestamp('2015-01-01', tz='utc')
 
-def get_pandas(id):
-    site_data = pywtk.wtk_api.get_wind_data(id, start, end, attributes=attributes, source='nc')
-    return site_data
+def upload_to_aws(local_file, bucket, s3_file):
+    s3 = boto3.client('s3')
 
-def get_parquet(pd):
-    #Change the timestamp index to a column
-    pd = pd.reset_index()
+    try:
+        s3.upload_file(local_file, bucket, s3_file)
+        print("Upload Successful")
+        return True
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            return False
+        else:
+            raise
+    except NoCredentialsError:
+        print("Credentials not available")
+        return False
 
-    # Create a Spark DataFrame from a Pandas DataFrame using Arrow
-    pqf = spark.createDataFrame(pd)
+uploaded = upload_to_aws('local_file', 'bucket_name', 's3_file_name')
 
-    return pqf
+class DownloadSite:
+    def __init__ (self, site_id):
+        self.site_id = site_id
 
-def write_parquet_to_s3(pq):
-    #Write to the S3 bucket
-    target = get_wtk_output_uri()
-    pq.coalesce(1).write.mode('append').parquet(target)
-    #df.write.format('parquet').save(target)
+    def get_pandas(self, id):
+        site_data = pwtk.get_wind_data(id, start, end, attributes=attributes, source='nc')
+        return site_data
 
-def download_site(site_id):
-    print("DOWNLOADING SITE ===> %s" % site_id)
-    site_pd = get_pandas(site_id)
-    site_pq = get_parquet(site_pd)
-    write_parquet_to_s3(site_pq)
+    def get_parquet(self, site_id, pd):
+        #Change the timestamp index to a column
+        pd = pd.reset_index()
+
+        # Write pandas to parquet
+        pd.to_parquet("%s.parquet"%site_id, engine='pyarrow')
+
+    def write_parquet_to_s3(self):
+        #Write to the S3 bucket
+        local_file = "%s.parquet" % self.site_id
+        #bucket = get_wtk_output_uri()
+        bucket = "windtoolkit"
+        s3_file = "pywtk-data/%s" % local_file
+        print("Localfile: %s S3 => %s " % (local_file, bucket))
+        uploaded = upload_to_aws(local_file, bucket, s3_file)
+        print("Localfile: %s S3 => %s (%s)" % (local_file, bucket, uploaded))
+        # TODO(): Retry
+        os.remove(local_file)
+
+    def download_site(self):
+        print("DOWNLOADING SITE ===> %s" % self.site_id)
+        site_pd = self.get_pandas(self.site_id)
+        site_pq = self.get_parquet(self.site_id, site_pd)
+        self.write_parquet_to_s3()
+
+def site_downloader(site_id):
+    #print("DOWNLOADING SITE ===> %s" % site_id)
+    downloader = DownloadSite(site_id)
+    downloader.download_site()
 
 if __name__ == '__main__':
     require_minimum_pandas_version()
@@ -65,5 +101,7 @@ if __name__ == '__main__':
     dist_site_list = spark.sparkContext.parallelize(site_list, len(site_list))
 
     # Download foreach site
-    dist_site_list.foreach(download_site)
+    dist_site_list.foreach(lambda site: site_downloader(site))
+
+    dist_site_list.collect()
 

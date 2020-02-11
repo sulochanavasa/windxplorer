@@ -16,10 +16,10 @@ def get_geodata_uri():
     return "s3a://%s/%s" % (WTK_DIR, SITE_GEODATA_CSV)
 
 def get_wtk_output_uri():
-    return "s3a://%s/%s" % (WTK_DIR, WTK_OUTPUT_DIR)
+    return "s3://%s/%s" % (WTK_DIR, WTK_OUTPUT_DIR)
 
 def get_parquet_uri(site_id):
-    return "s3a://%s/%s/%d.parquet" % (WTK_DIR, WTK_OUTPUT_DIR, site_id)
+    return "s3://%s/%s/%d.parquet" % (WTK_DIR, WTK_OUTPUT_DIR, site_id)
 
 if __name__ == '__main__':
     print(get_timezone_uri())
