@@ -84,4 +84,6 @@ if __name__ == '__main__':
     dist_site_list = spark.sparkContext.parallelize(site_list, len(site_list))
 
     # Download foreach site
-    dist_site_list.foreach(process_site_data)
+    dist_site_list.foreach(lambda site: process_site_data(site))
+
+    dist_site_list.collect()
