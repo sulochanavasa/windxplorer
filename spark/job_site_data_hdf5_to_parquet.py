@@ -14,7 +14,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import DataFrameWriter
 from pyspark.sql.utils import require_minimum_pandas_version, require_minimum_pyarrow_version
 from spark_utils import create_spark_session, write_to_postgres
-from wtk_utils import get_wtk_output_uri
+from wtk_utils import get_wtk_output_uri, get_nc_file_path
 
 import boto3
 from botocore.exceptions import NoCredentialsError
@@ -70,6 +70,7 @@ class DownloadSite:
         print("Localfile: %s S3 => %s (%s)" % (local_file, bucket, uploaded))
         # TODO(): Retry
         os.remove(local_file)
+        os.remove(get_nc_file_path(self.site_id))
 
     def download_site(self):
         print("DOWNLOADING SITE ===> %s" % self.site_id)
