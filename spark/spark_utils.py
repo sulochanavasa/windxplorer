@@ -25,8 +25,8 @@ def write_to_postgres(df, table, mode):
 def create_spark_session(app='windexplorer'):
     _spark = SparkSession.builder.appName(app) \
      .config("spark.executor.instances", "3") \
-     .config("spark.executor.cores",3) \
-     .config("spark.executor.memory", "4gb") \
+     .config("spark.executor.cores",6) \
+     .config("spark.executor.memory", "14gb") \
      .getOrCreate()
 
     # Ensure python dependency files be available on spark driver/workers

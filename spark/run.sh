@@ -31,11 +31,12 @@ fi
 LOAD_SITE_INFO_JOB=${PROJECT_DIR}/spark/job_load_site_info.py
 LOAD_SITE_DATA_JOB=${PROJECT_DIR}/spark/job_site_data_hdf5_to_parquet.py
 PROCESS_DATA_JOB=${PROJECT_DIR}/spark/job_process_site_data.py
+#PROCESS_DATA_JOB=${PROJECT_DIR}/spark/process_site_data.py
 PROCESS_SITE_SCORE_JOB=${PROJECT_DIR}/spark/job_site_score.py
 PROCESS_WIND_DIRECTION_JOB=${PROJECT_DIR}/spark/job_site_wind_direction.py
 
 #$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${LOAD_SITE_INFO_JOB}
-$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${LOAD_SITE_DATA_JOB}
-#$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${PROCESS_DATA_JOB}
+#$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${LOAD_SITE_DATA_JOB}
+$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${PROCESS_DATA_JOB}
 #$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${PROCESS_SITE_SCORE_JOB}
 #$SPARK_SUBMIT --master "$SPARK_MASTER" --jars "$JARS" ${PROCESS_WIND_DIRECTION_JOB}

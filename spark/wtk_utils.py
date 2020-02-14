@@ -20,7 +20,7 @@ def get_wtk_output_uri():
     return "s3://%s/%s" % (WTK_DIR, WTK_OUTPUT_DIR)
 
 def get_parquet_uri(site_id):
-    return "s3://%s/%s/%d.parquet" % (WTK_DIR, WTK_OUTPUT_DIR, site_id)
+    return "s3a://%s/%s/%d.parquet" % (WTK_DIR, WTK_OUTPUT_DIR, site_id)
 
 def get_nc_file_path(site_id):
     dir_ = str((int(site_id)/500))
