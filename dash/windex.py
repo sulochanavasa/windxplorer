@@ -131,8 +131,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="state_dropdown",
                             options=state_options,
-                            multi=True,
-                            value=STATES["CA"],
+                            value=[""],
                             className="dcc_control",
                         ),
                     ],
@@ -211,14 +210,24 @@ app.clientside_callback(
 def make_map_graph_figure(state_selector, map_graph_layout):
     traces = []
 
-    for site_score, dff in df.groupby("site_score"):
+    tdf = df
+    state = state_selector
+    if isinstance(state_selector, (list)):
+        state = state_selector[0]
+
+    if state != "":
+        tdf = df[df['state'] == STATES[state]]
+        if tdf.dropna().empty:
+            tdf = df
+
+    for site_score, dff in tdf.groupby("site_score"):
         data = dict(
                 type="scattermapbox",
                 lon=dff["lon"],
                 lat=dff["lat"],
-                text=dff.index.values,
-                customdata=dff.index.values,
-                name=dff["site_score"].astype(str),
+                text=dff.index,
+                customdata=dff.index,
+                name=dff["site_score"],
                 marker=dict(size=4, opacity=0.6),
             )
         traces.append(data)
