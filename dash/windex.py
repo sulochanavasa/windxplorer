@@ -39,6 +39,8 @@ df = df[df['site_id'].isin(site_list)]
 df = df[['site_id', 'site_score', 'gid', 'wind_speed', 'state', 'fraction_of_usable_area', 'timestamp', 'capacity', 'capacity_factor', 'lat', 'lon']]
 df.set_index('site_id', inplace=True)
 
+default_site_id =list(df.index.values)[0]
+
 # Create global chart template
 #mapbox_access_token = "pk.eyJ1Ijoic3Vsb2NoYW5hdmFzYSIsImEiOiJjazZpMDExdzMyempsM2pvYmt1dGl6d3NlIn0.jTaza9CXzAYEA9R_r8pjuQ"
 mapbox_access_token = "pk.eyJ1IjoiamFja2x1byIsImEiOiJjajNlcnh3MzEwMHZtMzNueGw3NWw5ZXF5In0.fk8k06T96Ml9CLGgKmk81w"
@@ -55,8 +57,8 @@ layout = dict(
     mapbox=dict(
         accesstoken=mapbox_access_token,
         style="light",
-        center=dict(lon=-78.05, lat=42.54),
-        zoom=7,
+        center=dict(lon=-100, lat=41),
+        zoom=3,
     ),
 )
 
@@ -184,10 +186,10 @@ app.layout = html.Div(
 )
 def update_site_info_text(map_graph_hover):
     if map_graph_hover is None:
-        return "-", 0, 0.0, 0, 0.00
-
-    point = map_graph_hover['points'][0]
-    site_id = point['text']
+        site_id = default_site_id
+    else:
+        point = map_graph_hover['points'][0]
+        site_id = point['customdata']
 
     dff = df[df.index.isin([site_id])]
 
@@ -214,9 +216,9 @@ def make_map_graph_figure(state_selector, map_graph_layout):
                 type="scattermapbox",
                 lon=dff["lon"],
                 lat=dff["lat"],
-                text=dff["site_score"],
-                customdata=dff["wind_speed"],
-                name=dff.index.values,
+                text=dff.index.values,
+                customdata=dff.index.values,
+                name=dff["site_score"].astype(str),
                 marker=dict(size=4, opacity=0.6),
             )
         traces.append(data)
@@ -244,15 +246,13 @@ def make_daily_graph_figure(map_graph_hover):
     layout_individual = copy.deepcopy(layout)
 
     if map_graph_hover is None:
-        site_id = list(df.index.values)[0]
+        site_id = default_site_id
     else:
         point = map_graph_hover['points'][0]
-        site_id = point['text']
+        site_id = point['customdata']
 
     daily_df = pd.DataFrame(get_site_total_daily_capacity(site_id))
-    printf(site_id)
     if daily_df is None:
-        print(site_id)
         site_id = 0
     else:
         daily_df['date'] = pd.to_datetime(daily_df[['year', 'month', 'day']], infer_datetime_format=True)
@@ -292,14 +292,13 @@ def make_monthly_graph_figure(map_graph_hover):
     layout_individual = copy.deepcopy(layout)
 
     if map_graph_hover is None:
-        site_id = list(df.index.values)[0]
+        site_id = default_site_id
     else:
         point = map_graph_hover['points'][0]
-        site_id = point['text']
+        site_id = point['customdata']
 
     monthly_df = pd.DataFrame(get_site_total_monthly_capacity(site_id))
     if monthly_df is None:
-        print(site_id)
         site_id = 0
     else:
         monthly_df['date'] = pd.to_datetime([f'{y}-{m}-01' for y, m in zip(monthly_df.year, monthly_df.month)])
@@ -340,14 +339,13 @@ def make_yearly_graph_figure(map_graph_hover):
     layout_individual = copy.deepcopy(layout)
 
     if map_graph_hover is None:
-        site_id = list(df.index.values)[0]
+        site_id = default_site_id
     else:
         point = map_graph_hover['points'][0]
-        site_id = point['text']
+        site_id = point['customdata']
 
     yearly_df = pd.DataFrame(get_site_total_yearly_capacity(site_id))
     if yearly_df is None:
-        print(site_id)
         site_id = 0
     else:
         yearly_df['date'] = pd.to_datetime([f'{y}-01-01' for y in yearly_df.year])
