@@ -227,7 +227,7 @@ def make_map_graph_figure(state_selector, map_graph_layout):
                 lat=dff["lat"],
                 text=dff.index,
                 customdata=dff.index,
-                name=dff["site_score"],
+                name='Score ' + str(site_score),
                 marker=dict(size=4, opacity=0.6),
             )
         traces.append(data)
