@@ -1,12 +1,15 @@
 # WindExplorer
-This is a project I completed during the Insight Data Engineering program (Silicon Valley, Spring 2020).
+This is a project I completed during the Insight Data Engineering program (Silicon Valley, Spring 2020).\
+[[Slides]](tinyurl.com/thct52g)  |  [[UI]](http://dataengine.club)
 
 It's a platform to help locate potential wind sites that are suitable for wind farm development by providing a site score for its wind capcacity in correlation with the other sites, average daily, daily and monthly data for wind profiles, wind capacity by wind directions and historical trends for each of the wind sites.
 
 I built a batch processing pipeline that ingests 2-TB of techno-economic wind data hosted on an S3 bucket in HDF5 Format. Per site data is extracted from the source files using PYWTK toolkit that returns the wind data in panda data frames. These dataframes are converted to Parquet file format using Apache Arrow and are stored back in S3. Spark read these files from S3, performs necessary computations and stores the data in PostgreSQL database. The resulsts are visualized through Flask on Leaflet, to obtain site relevant information and historical trends through charts.
 
+*Wind Resource at 100m Hub Height*
+![WindResouce](/WindResource)
 ## Pipeline
-
+![Pipeline](/WindExplorer.png)
 
 ## Engineering Challenges
 - Data is in NetCDF/HDF5 File Format which is not supported by Spark.
