@@ -1,4 +1,5 @@
 STATES = {
+        'ALL': 'All',
         'AK': 'Alaska',
         'AL': 'Alabama',
         'AR': 'Arkansas',
@@ -55,5 +56,10 @@ STATES = {
         'WA': 'Washington',
         'WI': 'Wisconsin',
         'WV': 'West Virginia',
-        'WY': 'Wyoming'
+        'WY': 'Wyoming',
+}
+
+SITE_FILTER_OPTIONS = {
+        'power': 'power',
+        'speed': 'speed'
 }

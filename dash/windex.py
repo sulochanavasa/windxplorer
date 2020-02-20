@@ -10,10 +10,10 @@ from dash.dependencies import Input, Output, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
 
-from db import get_site_info_db, get_site_total_daily_capacity, get_partial_sites, get_site_total_monthly_capacity, get_site_total_yearly_capacity
+from db import get_site_avg_yearly, get_site_avg_monthly, get_site_avg_daily, get_site_info_db, get_site_total_daily_capacity, get_partial_sites, get_site_total_monthly_capacity, get_site_total_yearly_capacity
 
 # Multi-dropdown options
-from constants import STATES
+from constants import STATES, SITE_FILTER_OPTIONS
 
 # get relative data folder
 PATH = pathlib.Path(__file__).parent
@@ -28,12 +28,16 @@ state_options = [
     {"label": str(STATES[state]), "value": str(state)} for state in STATES
 ]
 
+site_filter_options = [
+    {"label": str(SITE_FILTER_OPTIONS[option]), "value": str(option)} for option in SITE_FILTER_OPTIONS
+]
+
 # Load site info data
 df = pd.DataFrame(get_site_info_db())
 
 # Get the partial site_id's we have
-site_list = list(set(get_partial_sites()))
-df = df[df['site_id'].isin(site_list)]
+#site_list = list(set(get_partial_sites()))
+#df = df[df['site_id'].isin(site_list)]
 
 # Pick the columns we want and make 'site_id' the index
 df = df[['site_id', 'site_score', 'state', 'fraction_of_usable_area', 'lat', 'lon']]
@@ -135,15 +139,28 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="state_dropdown",
                             options=state_options,
-                            value=[""],
+                            value="all",
                             className="dcc_control",
                         ),
                     ],
-                    className="pretty_container container",
-                    id="cross-filter-options",
+                    className="pretty_container six columns",
+                    id="state-filter-options",
+                ),
+                html.Div(
+                    [
+                        html.P("Filter by Feature", className="control_label"),
+                        dcc.Dropdown(
+                            id="feature_drop_down",
+                            options=site_filter_options,
+                            value="power",
+                            className="dcc_control",
+                        ),
+                    ],
+                    className="pretty_container six columns",
+                    id="feature-filter-options",
                 ),
             ],
-            className="row",
+            className="row flex-display",
         ),
         html.Div(
             [
@@ -245,9 +262,12 @@ def make_map_graph_figure(state_selector, map_graph_layout):
 # Map graph -> daily graph
 @app.callback(
     Output("daily_graph", "figure"), 
-    [Input("map_graph", "hoverData")]
+    [
+        Input("map_graph", "hoverData"),
+        Input("feature_drop_down", "value")
+    ]
 )
-def make_daily_graph_figure(map_graph_hover):
+def make_daily_graph_figure(map_graph_hover, feature_drop_down_value):
 
     layout_individual = copy.deepcopy(layout)
 
@@ -256,9 +276,17 @@ def make_daily_graph_figure(map_graph_hover):
     else:
         point = map_graph_hover['points'][0]
         site_id = point['customdata']
+    
+    daily_df = None
+    title = ""
+    if feature_drop_down_value == "speed":
+        daily_df = pd.DataFrame(get_site_avg_daily(site_id))
+        title = "Daily Wind Speed (%s)" % site_id 
+    else:
+        daily_df = pd.DataFrame(get_site_total_daily_capacity(site_id))
+        title = "Daily Wind Capacity (%s)" % site_id 
 
-    daily_df = pd.DataFrame(get_site_total_daily_capacity(site_id))
-    if daily_df is None:
+    if daily_df is None or daily_df.dropna().empty:
         site_id = 0
     else:
         daily_df['date'] = pd.to_datetime(daily_df[['year', 'month', 'day']], infer_datetime_format=True)
@@ -274,6 +302,7 @@ def make_daily_graph_figure(map_graph_hover):
             yref="paper",
         )
         layout_individual["annotations"] = [annotation]
+        layout_individual["title"] = "Daily Chart"
         data = []
     else:
         data = [
@@ -281,10 +310,10 @@ def make_daily_graph_figure(map_graph_hover):
                 type="bar",
                 name="Daily Wind Speed Average",
                 x=daily_df['date'],
-                y=daily_df['dailyPower'],
+                y=daily_df['dailyPower'] if feature_drop_down_value == "power" else daily_df['avgWindspeed']
             ),
         ]
-        layout_individual["title"] = "Daily Wind Capacity (%s)" % site_id
+        layout_individual["title"] = title
 
     figure = dict(data=data, layout=layout_individual)
     return figure
@@ -292,9 +321,12 @@ def make_daily_graph_figure(map_graph_hover):
 # Map graph -> monthly graph
 @app.callback(
     Output("monthly_graph", "figure"), 
-    [Input("map_graph", "hoverData")]
+    [
+        Input("map_graph", "hoverData"),
+        Input("feature_drop_down", "value")
+    ]
 )
-def make_monthly_graph_figure(map_graph_hover):
+def make_monthly_graph_figure(map_graph_hover, feature_drop_down_value):
     layout_individual = copy.deepcopy(layout)
 
     if map_graph_hover is None:
@@ -303,8 +335,16 @@ def make_monthly_graph_figure(map_graph_hover):
         point = map_graph_hover['points'][0]
         site_id = point['customdata']
 
-    monthly_df = pd.DataFrame(get_site_total_monthly_capacity(site_id))
-    if monthly_df is None:
+    monthly_df = None
+    title = ""
+    if feature_drop_down_value == "speed":
+        monthly_df = pd.DataFrame(get_site_avg_monthly(site_id))
+        title = "Monthly Wind Speed (%s)" % site_id 
+    else:
+        monthly_df = pd.DataFrame(get_site_total_monthly_capacity(site_id))
+        title = "Monthly Wind Capacity (%s)" % site_id 
+
+    if monthly_df is None or monthly_df.dropna().empty:
         site_id = 0
     else:
         monthly_df['date'] = pd.to_datetime([f'{y}-{m}-01' for y, m in zip(monthly_df.year, monthly_df.month)])
@@ -320,6 +360,7 @@ def make_monthly_graph_figure(map_graph_hover):
             yref="paper",
         )
         layout_individual["annotations"] = [annotation]
+        layout_individual["title"] = "Monthly Chart"
         data = []
     else:
         data = [
@@ -327,10 +368,10 @@ def make_monthly_graph_figure(map_graph_hover):
                 type="bar",
                 name="Monthly Wind Capacity",
                 x=monthly_df['date'],
-                y=monthly_df['monthlyPower'],
+                y=monthly_df['monthlyPower'] if feature_drop_down_value == "power" else monthly_df['avgWindspeed']
             ),
         ]
-        layout_individual["title"] = "Monthly Wind Capacity (%s)" % site_id
+        layout_individual["title"] = title
 
     figure = dict(data=data, layout=layout_individual)
     return figure
@@ -338,9 +379,12 @@ def make_monthly_graph_figure(map_graph_hover):
 # Map graph -> yearly graph
 @app.callback(
     Output("yearly_graph", "figure"), 
-    [Input("map_graph", "hoverData")]
+    [
+        Input("map_graph", "hoverData"),
+        Input("feature_drop_down", "value")
+    ]
 )
-def make_yearly_graph_figure(map_graph_hover):
+def make_yearly_graph_figure(map_graph_hover, feature_drop_down_value):
 
     layout_individual = copy.deepcopy(layout)
 
@@ -350,8 +394,16 @@ def make_yearly_graph_figure(map_graph_hover):
         point = map_graph_hover['points'][0]
         site_id = point['customdata']
 
-    yearly_df = pd.DataFrame(get_site_total_yearly_capacity(site_id))
-    if yearly_df is None:
+    yearly_df = None
+    title = ""
+    if feature_drop_down_value == "speed":
+        yearly_df = pd.DataFrame(get_site_avg_yearly(site_id))
+        title = "Yearly Wind Speed (%s)" % site_id 
+    else:
+        yearly_df = pd.DataFrame(get_site_total_yearly_capacity(site_id))
+        title = "Yearly Wind Capacity (%s)" % site_id 
+
+    if yearly_df is None or yearly_df.dropna().empty:
         site_id = 0
     else:
         yearly_df['date'] = pd.to_datetime([f'{y}-01-01' for y in yearly_df.year])
@@ -367,17 +419,18 @@ def make_yearly_graph_figure(map_graph_hover):
             yref="paper",
         )
         layout_individual["annotations"] = [annotation]
+        layout_individual["title"] = "Yearly Chart"
         data = []
     else:
         data = [
             dict(
                 type="bar",
-                name="Monthly Wind Capacity",
+                name="Yearly Wind Capacity",
                 x=yearly_df['date'],
-                y=yearly_df['yearlyPower'],
+                y=yearly_df['yearlyPower'] if feature_drop_down_value == "power" else yearly_df['avgWindspeed']
             ),
         ]
-        layout_individual["title"] = "Yearly Wind Capacity (%s)" % site_id
+        layout_individual["title"] = title
 
     figure = dict(data=data, layout=layout_individual)
     return figure
