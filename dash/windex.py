@@ -36,7 +36,7 @@ site_list = list(set(get_partial_sites()))
 df = df[df['site_id'].isin(site_list)]
 
 # Pick the columns we want and make 'site_id' the index
-df = df[['site_id', 'site_score', 'gid', 'wind_speed', 'state', 'fraction_of_usable_area', 'timestamp', 'capacity', 'capacity_factor', 'lat', 'lon']]
+df = df[['site_id', 'site_score', 'state', 'fraction_of_usable_area', 'lat', 'lon']]
 df.set_index('site_id', inplace=True)
 
 default_site_id =list(df.index.values)[0]
@@ -65,7 +65,6 @@ layout = dict(
 # Create app layout
 app.layout = html.Div(
     [
-        dcc.Store(id="aggregate_data"),
         # empty Div to trigger javascript file for graph resizing
         html.Div(id="output-clientside"),
         html.Div(
@@ -95,33 +94,38 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Div(
-                    [html.H6(id="site_id_text"), html.P("Site ID")],
-                    id="site_id",
-                    className="mini_container",
+                    [dcc.Graph(id="map_graph", style={"height": "100%"})],
+                    className="eleven columns",
                 ),
                 html.Div(
-                    [html.H6(id="site_score_text"), html.P("Site Score")],
-                    id="site_score",
-                    className="mini_container",
-                ),
-                html.Div(
-                    [html.H6(id="wind_speed_text"), html.P("Wind Speed")],
-                    id="wind_speed",
-                    className="mini_container",
-                ),
-                html.Div(
-                    [html.H6(id="capacity_text"), html.P("Capacity")],
-                    id="capacity",
-                    className="mini_container",
-                ),
-                html.Div(
-                    [html.H6(id="capacity_factor_text"), html.P("Capacity Factor")],
-                    id="capacity_factor",
-                    className="mini_container",
+                    [
+                        html.Div(
+                            [html.H6(id="site_id_text"), html.P("Site ID")],
+                            id="site_id",
+                            className="mini_container",
+                        ),
+                        html.Div(
+                            [html.H6(id="site_score_text"), html.P("Site Score")],
+                            id="site_score",
+                            className="mini_container",
+                        ),
+                        html.Div(
+                            [html.H6(id="state_text"), html.P("State")],
+                            id="state",
+                            className="mini_container",
+                        ),
+                        html.Div(
+                            [html.H6(id="usable_area_text"), html.P("Usable Area")],
+                            id="usable_area",
+                            className="mini_container",
+                        ),
+                    ],
+                    id="info-container",
+                    className="two colums container-display",
+                    style={"display": "flex", "flex-direction": "column"},
                 ),
             ],
-            id="info-container",
-            className="row container-display",
+            className="row flex-display",
         ),
         html.Div(
             [
@@ -135,30 +139,21 @@ app.layout = html.Div(
                             className="dcc_control",
                         ),
                     ],
-                    className="pretty_container four columns",
+                    className="pretty_container container",
                     id="cross-filter-options",
                 ),
             ],
-            className="row flex-display",
+            className="row",
         ),
         html.Div(
             [
-                html.Div(
-                    [dcc.Graph(id="map_graph")],
-                    className="pretty_container seven columns",
-                ),
                 html.Div(
                     [dcc.Graph(id="daily_graph")],
                     className="pretty_container five columns",
                 ),
-            ],
-            className="row flex-display",
-        ),
-        html.Div(
-            [
                 html.Div(
                     [dcc.Graph(id="monthly_graph")],
-                    className="pretty_container seven columns",
+                    className="pretty_container five columns",
                 ),
                 html.Div(
                     [dcc.Graph(id="yearly_graph")],
@@ -177,9 +172,8 @@ app.layout = html.Div(
     [
         Output("site_id_text", "children"),
         Output("site_score_text", "children"),
-        Output("wind_speed_text", "children"),
-        Output("capacity_text", "children"),
-        Output("capacity_factor_text", "children"),
+        Output("state_text", "children"),
+        Output("usable_area_text", "children"),
     ],
     [Input("map_graph", "hoverData")],
 )
@@ -192,7 +186,7 @@ def update_site_info_text(map_graph_hover):
 
     dff = df[df.index.isin([site_id])]
 
-    return site_id, dff['site_score'], dff['wind_speed'], dff['capacity'], dff['capacity_factor']
+    return site_id, dff['site_score'], dff['state'], dff['fraction_of_usable_area']
 
 # Create callbacks
 app.clientside_callback(
@@ -215,10 +209,13 @@ def make_map_graph_figure(state_selector, map_graph_layout):
     if isinstance(state_selector, (list)):
         state = state_selector[0]
 
-    if state != "":
-        tdf = df[df['state'] == STATES[state]]
-        if tdf.dropna().empty:
-            tdf = df
+    try:
+        if state != "" and state != "None":
+            tdf = df[df['state'] == STATES[state]]
+            if tdf.dropna().empty:
+                tdf = df
+    except KeyError:
+        tdf = df
 
     for site_score, dff in tdf.groupby("site_score"):
         data = dict(
@@ -287,7 +284,7 @@ def make_daily_graph_figure(map_graph_hover):
                 y=daily_df['dailyPower'],
             ),
         ]
-        layout_individual["title"] = "Daily Wind Speed Average (%s)" % site_id
+        layout_individual["title"] = "Daily Wind Capacity (%s)" % site_id
 
     figure = dict(data=data, layout=layout_individual)
     return figure
@@ -328,12 +325,12 @@ def make_monthly_graph_figure(map_graph_hover):
         data = [
             dict(
                 type="bar",
-                name="Monthly Wind Speed Average",
+                name="Monthly Wind Capacity",
                 x=monthly_df['date'],
                 y=monthly_df['monthlyPower'],
             ),
         ]
-        layout_individual["title"] = "Monthly Wind Speed Average (%s)" % site_id
+        layout_individual["title"] = "Monthly Wind Capacity (%s)" % site_id
 
     figure = dict(data=data, layout=layout_individual)
     return figure
@@ -375,12 +372,12 @@ def make_yearly_graph_figure(map_graph_hover):
         data = [
             dict(
                 type="bar",
-                name="Monthly Wind Speed Average",
+                name="Monthly Wind Capacity",
                 x=yearly_df['date'],
                 y=yearly_df['yearlyPower'],
             ),
         ]
-        layout_individual["title"] = "Yearly Wind Speed Average (%s)" % site_id
+        layout_individual["title"] = "Yearly Wind Capacity (%s)" % site_id
 
     figure = dict(data=data, layout=layout_individual)
     return figure
