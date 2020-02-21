@@ -14,7 +14,7 @@ SITE_AVG_MONTHLY="site_avg_monthly_capacity"
 SITE_AVG_YEARLY="site_avg_yearly_capacity"
 
 # Read database configuration from environment variables. If not specified, use the default config.
-DB_HOST = os.getenv('POSTGRES_HOST', '10.0.0.6')
+DB_HOST = os.getenv('POSTGRES_HOST', '10.0.0.10')
 DB_PORT = os.getenv('POSTGRES_PORT', '5432')
 DB_USER = os.getenv('POSTGRES_USER', 'postgres')
 DB_PWD = os.getenv('POSTGRES_PWD', 'postgres')
@@ -51,7 +51,7 @@ def get_site_avg_monthly(site_id):
     return [dict(site) for site in result_set]
 
 def get_site_avg_daily(site_id):
-    result_set = DB.execute(f'SELECT site_id, year, month, day, "avgWindspeed" FROM {SITE_AVG_DAILY} WHERE site_id={site_id}')
+    result_set = DB.execute(f'SELECT site_id, year, month, day, avgwindspeed FROM {SITE_AVG_DAILY} WHERE site_id={site_id}')
 
     return [dict(site) for site in result_set]
 
@@ -80,12 +80,22 @@ if __name__ == "__main__":
     site_info_rows = get_site_info_db()
     
     #print(site_info_rows[0])
-    #print(get_site_total_daily_capacity(21121))
-    #print(get_site_total_monthly_capacity(21121))
-    #print(get_site_total_yearly_capacity(21121))
-    #print(get_partial_sites())
-    #print(get_site_score()[0])
-    #print(get_site_wind_power(100007))
-    #print(get_site_avg_daily(21121))
-    print(get_site_avg_monthly(2182))
-    print(get_site_avg_yearly(2182))
+    #print(get_site_total_daily_capacity(11021))
+    #print(get_site_total_monthly_capacity(11021))
+    #print(get_site_total_yearly_capacity(11021))
+    #print(len(set(get_partial_sites())))
+    #print(get_site_wind_power(11021))
+    #print(get_site_avg_daily(11021))
+    #print(get_site_avg_monthly(11021))
+    #print(get_site_avg_yearly(11021))
+
+    state = {}
+    db = get_site_info_db()
+    for site_info in db:
+        print(site_info['site_id'], site_info['state'])
+        if not site_info['state'] in state:
+            state[site_info['state']] = [site_info['site_id']]
+        else:
+            state[site_info['state']].append(site_info['site_id'])
+
+    print(state)

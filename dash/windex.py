@@ -310,7 +310,7 @@ def make_daily_graph_figure(map_graph_hover, feature_drop_down_value):
                 type="bar",
                 name="Daily Wind Speed Average",
                 x=daily_df['date'],
-                y=daily_df['dailyPower'] if feature_drop_down_value == "power" else daily_df['avgWindspeed']
+                y=daily_df['dailypower'] if feature_drop_down_value == "power" else daily_df['avgwindspeed']
             ),
         ]
         layout_individual["title"] = title
@@ -368,7 +368,7 @@ def make_monthly_graph_figure(map_graph_hover, feature_drop_down_value):
                 type="bar",
                 name="Monthly Wind Capacity",
                 x=monthly_df['date'],
-                y=monthly_df['monthlyPower'] if feature_drop_down_value == "power" else monthly_df['avgWindspeed']
+                y=monthly_df['monthlypower'] if feature_drop_down_value == "power" else monthly_df['avgwindspeed']
             ),
         ]
         layout_individual["title"] = title
@@ -427,7 +427,7 @@ def make_yearly_graph_figure(map_graph_hover, feature_drop_down_value):
                 type="bar",
                 name="Yearly Wind Capacity",
                 x=yearly_df['date'],
-                y=yearly_df['yearlyPower'] if feature_drop_down_value == "power" else yearly_df['avgWindspeed']
+                y=yearly_df['yearlypower'] if feature_drop_down_value == "power" else yearly_df['avgwindspeed']
             ),
         ]
         layout_individual["title"] = title
