@@ -34,8 +34,7 @@ def get_site_info_db():
 
     return [dict(site) for site in result_set]
 
-# Temporary API to get only the sites we have
-def get_partial_sites():
+def get_all_sites():
     result_set = DB.execute(f'SELECT * FROM {SITE_INFO}')
 
     return [dict(site) for site in result_set]
@@ -89,31 +88,3 @@ if __name__ == "__main__":
     #print(get_site_avg_monthly(11021))
     #print(get_site_avg_yearly(11021))
 
-    # List of states and sites
-    state = {}
-    db = get_partial_sites()
-    for site_info in db:
-        if not site_info['state'] in state:
-            state[site_info['state']] = [site_info['site_id']]
-        else:
-            state[site_info['state']].append(site_info['site_id'])
-
-    # Print states and sites
-    min_sites = 9999999
-    max_sites = 0
-    min_state = ""
-    max_state = ""
-    for s in state.keys():
-        num_sites = len(state[s])
-        print("STATE: %s SITES: %u" % (s, len(state[s])))
-        if s is None:
-            continue
-        if num_sites < min_sites:
-            min_sites = num_sites
-            min_state = s
-        if num_sites > max_sites:
-            max_sites = num_sites
-            max_state = s
-    print("TOTAL STATES => %u" % (len(state.keys())))
-    print("MAX SITES STATE %s SITES %u" % (max_state, max_sites))
-    print("MIN SITES STATE %s SITES %u" % (min_state, min_sites))
