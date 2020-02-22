@@ -36,9 +36,9 @@ def get_site_info_db():
 
 # Temporary API to get only the sites we have
 def get_partial_sites():
-    result_set = DB.execute(f'SELECT site_id FROM {SITE_TOTAL_DAILY}')
+    result_set = DB.execute(f'SELECT * FROM {SITE_INFO}')
 
-    return [dict(site)['site_id'] for site in result_set]
+    return [dict(site) for site in result_set]
 
 def get_site_avg_yearly(site_id):
     result_set = DB.execute(f'SELECT site_id, year, avgwindspeed FROM {SITE_AVG_YEARLY} WHERE site_id={site_id}')
@@ -89,13 +89,31 @@ if __name__ == "__main__":
     #print(get_site_avg_monthly(11021))
     #print(get_site_avg_yearly(11021))
 
+    # List of states and sites
     state = {}
-    db = get_site_info_db()
+    db = get_partial_sites()
     for site_info in db:
-        print(site_info['site_id'], site_info['state'])
         if not site_info['state'] in state:
             state[site_info['state']] = [site_info['site_id']]
         else:
             state[site_info['state']].append(site_info['site_id'])
 
-    print(state)
+    # Print states and sites
+    min_sites = 9999999
+    max_sites = 0
+    min_state = ""
+    max_state = ""
+    for s in state.keys():
+        num_sites = len(state[s])
+        print("STATE: %s SITES: %u" % (s, len(state[s])))
+        if s is None:
+            continue
+        if num_sites < min_sites:
+            min_sites = num_sites
+            min_state = s
+        if num_sites > max_sites:
+            max_sites = num_sites
+            max_state = s
+    print("TOTAL STATES => %u" % (len(state.keys())))
+    print("MAX SITES STATE %s SITES %u" % (max_state, max_sites))
+    print("MIN SITES STATE %s SITES %u" % (min_state, min_sites))
