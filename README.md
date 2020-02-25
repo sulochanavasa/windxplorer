@@ -1,8 +1,8 @@
 # WindExplorer
 This is a project I completed during the Insight Data Engineering program (Silicon Valley, Spring 2020).\
-[[Slides]](tinyurl.com/thct52g)  |  [[UI]](http://dataengine.club)
+[[Slides]](http://tinyurl.com/thct52g)  |  [[UI]](http://dataengine.club)
 
-It's a platform to help locate potential wind sites that are suitable for wind farm development by providing a site score for its wind capcacity in correlation with the other sites, average daily, daily and monthly data for wind profiles, wind capacity by wind directions and historical trends for each of the wind sites.
+It's a platform to help locate potential wind sites across the US that are suitable for wind farm development.  Each site is provided a site score, based on it's wind capcacity in correlation with the other sites. The higher the score, the greater is the wind capacity. The tool also provides historical trends in the form of bar charts on the average wind speed and power produced for each of the wind sites. The data for Wind capacity by wind direction is also available, which is not currently displayed on the UI.
 
 I built a batch processing pipeline that ingests 2-TB of techno-economic wind data hosted on an S3 bucket in HDF5 Format. Per site data is extracted from the source files using PYWTK toolkit that returns the wind data in panda data frames. These dataframes are converted to Parquet file format using Apache Arrow and are stored back in S3. Spark read these files from S3, performs necessary computations and stores the data in PostgreSQL database. The resulsts are visualized through Flask on Leaflet, to obtain site relevant information and historical trends through charts.
 
